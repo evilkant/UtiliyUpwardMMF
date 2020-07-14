@@ -205,7 +205,25 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
 
 def congestion_splits(commodities,pl_mat):
-    pass
+
+    link_congestion=np.sum(np.array(pl_mat),axis=0)
+
+    splits={}
+    max_congestion={}
+    for cm in commodities:
+        total=0
+        for p in cm:
+            max_congestion[p]=0
+            for l in range(len(pl_mat[0])):
+                if pl_mat[p][l]==1:
+                    if link_congestion[l]>max_congestion[p]:
+                        max_congestion[p]=link_congestion[l]
+            total+=1/max_congestion[p]
+        for p in cm:
+            splits[p]=(1/max_congestion[p])/total
+
+    return splits
+
 
 def random_splits(commodities):
     paths=[]
@@ -239,36 +257,29 @@ def uniform_splits(commodities):
     
     return splits
 
-        
 
 def exp_decay_splits(commodities,pl_mat):
-    paths=[]
-    for cm in commodities:
-        for p in cm:
-            paths.append(p)
 
-    p_len={}
     splits={}
-    for p in paths:
-        length=0
-        for l in range(len(pl_mat[0])):
-            if pl_mat[p][l]==1:
-                length+=1
-        p_len[p]=length
-    sorted_p=sorted(p_len.items(),key=lambda x:x[1])
-    #print(sorted_p)
+
     for cm in commodities:
+        p_len={}
+        for p in cm:
+            length=0
+            for l in range(len(pl_mat[0])):
+                if pl_mat[p][l]==1:
+                    length+=1
+            p_len[p]=length
+        sorted_p=sorted(p_len.items(),key=lambda x:x[1])
         total=0
-        for p in cm:
-            index=sorted_p.index((p,p_len[p]))
-            #print(1/2**index)
-            total+=1/((1.2)**index)
-            #print("total is "+str(total))
-        for p in cm:
-            index=sorted_p.index((p,p_len[p]))
-            splits[p]=1/((1.2)**index)/total
-    #print(splits)
+        for i in range(len(sorted_p)):
+            total+=1/(10**i)
+        for i in range(len(sorted_p)):
+            splits[sorted_p[i][0]]=(1/(10**i))/total
+
     return splits
+
+
 
 
 
@@ -277,7 +288,8 @@ if __name__=='__main__':
     ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_110.txt")
     pl_mat,cms,c=topo.read_data("D:/github/UtiliyUpwardMMF/data/topologies/abilene_2_110.txt")
 
-    initial_splits=uniform_splits(cms)
+    #initial_splits=exp_decay_splits(cms,pl_mat)
+    initial_splits=congestion_splits(cms,pl_mat)
     cm_alloc,diffs=Util_IEWF(pl_mat,cms,c,initial_splits,ufuncs,5)
 
     util_alloc=utility.flow2util(ufuncs,cm_alloc)
