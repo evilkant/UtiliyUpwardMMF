@@ -135,5 +135,24 @@ def get_util_vec(ufuncs):   # sort utilities
             u.append(sorted_utils[i])
     return u
 
+def add_noise_to_uvec(u,times):
+    u_len=len(u)
+    n=u_len*times
+    while n>0:
+        a=random.randint(100,200)
+        b=random.randint(1,100)
+        u.append((a/b)%100)
+        n-=1
+
+    sorted_utils=sorted(u)
+
+    new_u=[]
+    new_u.append(sorted_utils[0])
+    for i in range(1,len(sorted_utils)):
+        if sorted_utils[i]!=sorted_utils[i-1]:
+            new_u.append(sorted_utils[i])
+
+    return new_u
+
 if __name__ == "__main__":
     write_ufuncs(110,"D:/github/UtiliyUpwardMMF/data/ufuncs/uf_110.txt")

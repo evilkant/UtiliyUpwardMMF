@@ -91,7 +91,7 @@ def bin_search(u_vec,curr_idx,feas_idx,infeas_idx,model):
         else:
             infeas_idx=idx
 
-    print("largest feasible index is "+str(feas_idx))
+    #print("largest feasible index is "+str(feas_idx))
     return feas_idx
 
 
@@ -102,9 +102,9 @@ def test():
     initial_splits=UIEWF.exp_decay_splits(cms,pl_mat)
     model={'commodities':cms,'utility_functions':scaled_ufuncs,'splits':initial_splits,'pl_matrix':pl_mat,'capacities':c}
 
-    u_vec=utility.get_util_vec(scaled_ufuncs)
+    #u_vec=utility.get_util_vec(scaled_ufuncs)
     #print(u_vec)
-    i_feas,i_infeas=exp_search(u_vec,0,model)
+    #i_feas,i_infeas=exp_search(u_vec,0,model)
     #print("feasible index: "+str(i_feas))
     #print("infeasible index: "+str(i_infeas))
     #print(raise_utility(0,u_vec[4],model))

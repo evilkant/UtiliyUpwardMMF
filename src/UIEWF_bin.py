@@ -40,7 +40,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
 
     diff=[10 for i in range(len(paths))]    #difference between two iterations
     
-    th=0.05 #threshold for stopping iterating
+    th=0.00001 #threshold for stopping iterating
 
     splits=initial_splits
 
@@ -49,6 +49,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
     d=1
 
     u=utility.get_util_vec(ufuncs)
+    u=utility.add_noise_to_uvec(u,9)
 
 
     iteration=0
@@ -88,7 +89,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
 
 def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
-    print(u)
+    #print(u)
 
     j=0
 
@@ -113,43 +114,53 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
     paths_state=[0 for i in range(len(pl_mat))]
 
+    region_shift=True
+
     while len(unsat_paths)>0:
 
-        print("j is "+str(j))
+        #print("j is "+str(j))
 
         if j==len(u)-1:
             break
 
-        #bin search
-        model={'commodities':cms,'utility_functions':utils,'splits':splits,'pl_matrix':pl_mat,'capacities':capacity}
+        if region_shift==True:
+            #bin search
+            model={'commodities':cms,'utility_functions':utils,'splits':splits,'pl_matrix':pl_mat,'capacities':capacity}
 
-        i_feas,i_infeas=helper.exp_search(u,j,model)
-        new_j=helper.bin_search(u,j,i_feas,i_infeas,model)
+            i_feas,i_infeas=helper.exp_search(u,j,model)
+            new_j=helper.bin_search(u,j,i_feas,i_infeas,model)
 
-        current_u=u[j]
-        target_u=u[new_j]
+            current_u=u[j]
+            target_u=u[new_j]
         
-        for i in range(len(cms)):
-            util_func=utils[i]
-            current_bw=helper.get_bandwidth(current_u,util_func)
-            target_bw=helper.get_bandwidth(target_u,util_func)
-            delta_bw=target_bw-current_bw
-            for p in cms[i]:
-                delta_bw_p=splits[p]*delta_bw
-                alloc[p]+=delta_bw_p
-                for l in range(len(pl_mat[0])):
-                    if pl_mat[p][l]==1:
-                        capacity[l]-=delta_bw_p
+            for i in range(len(cms)):
+                util_func=utils[i]
+                current_bw=helper.get_bandwidth(current_u,util_func)
+                target_bw=helper.get_bandwidth(target_u,util_func)
+                delta_bw=target_bw-current_bw
+                for p in cms[i]:
+                    delta_bw_p=splits[p]*delta_bw
+                    alloc[p]+=delta_bw_p
+                    for l in range(len(pl_mat[0])):
+                        if pl_mat[p][l]==1:
+                            capacity[l]-=delta_bw_p
 
 
-        j=new_j
+            if new_j > j:
+                j=new_j
+                waterlevel=u[j]
+
+            region_shift=False
+
+        #print("waterlevel be "+str(waterlevel))
 
         if j==len(u)-1:
             break
 
         region=(u[j],u[j+1])
 
-        #print("current waterlevel: "+str(waterlevel)+" should not reach "+str(u[j+1]))
+        #print("utility region is ")
+        #print(region)
 
         for i in range(len(cms)):
             util=utils[i]
@@ -181,9 +192,9 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
                 min_delta=delta
         
         if waterlevel+min_delta>=region[1]:
-            print("You should not see this message")
             min_delta=region[1]-waterlevel
             j+=1
+            region_shift=True
             
 
         if math.isinf(min_delta):
@@ -203,7 +214,7 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
         for l in range(len(pl_mat[0])):
             if link_usage[l]!=0 and capacity[l]<0.01:
                 link_usage[l]=0
-                print("link "+str(l) +" saturates at "+str(waterlevel))
+                #print("link "+str(l) +" saturates at "+str(waterlevel))
                 capacity[l]=0
                 for p in unsat_paths:
                     if pl_mat[p][l]==1:
@@ -323,8 +334,11 @@ def exp_decay_splits(commodities,pl_mat):
 
 
 if __name__=='__main__':
-    ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_110.txt")
-    pl_mat,cms,c=topo.read_data("D:/github/UtiliyUpwardMMF/data/topologies/abilene_2_110.txt")
+    #ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_110.txt")
+    #pl_mat,cms,c=topo.read_data("D:/github/UtiliyUpwardMMF/data/topologies/abilene_2_110.txt")
+
+    pl_mat,cms,c=topo.read_data('D:/utility-mmf/scripts/dataset/convergence/waxman_20_4_380_1.txt')
+    ufuncs=utility.read_ufuncs("D:/utility-mmf/scripts/dataset/convergence/uf_380_time_1.txt")
 
     initial_splits=exp_decay_splits(cms,pl_mat)
     #initial_splits=congestion_splits(cms,pl_mat)

@@ -39,7 +39,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
 
     diff=[10 for i in range(len(paths))]    #difference between two iterations
     
-    th=0.05 #threshold for stopping iterating
+    th=0.00001 #threshold for stopping iterating
 
     splits=initial_splits
 
@@ -48,6 +48,8 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
     d=1
 
     u=utility.get_util_vec(ufuncs)
+    u=utility.add_noise_to_uvec(u,9)
+    #print(u)
 
 
     iteration=0
@@ -74,6 +76,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
         alloc=new_alloc
         cm_alloc=new_cm_alloc
 
+        #print(cm_alloc)
 
         for i in range(len(cms)):
             for p in cms[i]:
