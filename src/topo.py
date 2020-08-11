@@ -161,4 +161,4 @@ def write_random_data(node_num,path_num,cms_num):
 
 if __name__=="__main__":
     #write_abilene_data(2,110)
-    write_random_data(30,2,30*29)
+    write_random_data(50,2,50*49)

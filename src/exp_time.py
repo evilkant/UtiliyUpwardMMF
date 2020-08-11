@@ -5,6 +5,7 @@ import utility
 import topo
 import time
 import numpy as np
+import UMMP
 
 def running_time():
 
@@ -19,7 +20,7 @@ def running_time():
 
     pl_mat,cms,c=topo.read_data('D:/utility-mmf/scripts/dataset/convergence/waxman_20_4_380_1.txt')
 
-    new_c=[300.0 for i in range(len(c))]
+    new_c=[10000.0 for i in range(len(c))]
     c=new_c
 
     cm_nums=np.arange(100,381,40)
@@ -72,4 +73,20 @@ def running_time():
     plt.show()
 
 if __name__=='__main__':
-    running_time()
+    #running_time()
+    pl_mat,cms,c=topo.read_data('D:/github/UtiliyUpwardMMF/data/topologies/waxman_50_2_2450.txt')
+    ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_2450.txt")
+    scaled_ufuncs=utility.scale_ufuncs(ufuncs)
+
+    #pl_mat,cms,c=topo.read_data('D:/github/UtiliyUpwardMMF/data/topologies/waxman_30_2_870.txt')
+    #ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_870.txt")
+
+    new_c=[5000.0 for i in range(len(c))]
+    c=new_c
+
+    start_time=time.time()
+    #initial_splits=UIEWF.exp_decay_splits(cms,pl_mat)
+    #cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,ufuncs,5)
+    cms_alloc,paths_alloc,useful_when_error=UMMP.max_min_program(pl_mat,cms,c,scaled_ufuncs,len(cms))
+    tot_time=time.time()-start_time
+    print(tot_time)

@@ -4,16 +4,10 @@ import numpy as np
 import utility
 import topo
 
+import time
 
-def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
 
-    ufuncs=[]
-
-    for util in ufuncs_:
-        new_util=[]
-        for pt in util:
-            new_util.append((pt[0],pt[1]*100))
-        ufuncs.append(new_util)
+def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it):
 
 
     # paths of interest
@@ -48,7 +42,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
     d=1
 
     u=utility.get_util_vec(ufuncs)
-    u=utility.add_noise_to_uvec(u,9)
+    #u=utility.add_noise_to_uvec(u,9)
     #print(u)
 
 
@@ -57,7 +51,10 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs_,it):
         iteration+=1
         print("iteration #"+str(iteration))
 
+        start_time=time.time()
         new_alloc=wf(pl_mat,cms,paths,splits,caps,link_usage,ufuncs,u)
+        print("time is:")
+        print(time.time()-start_time)
 
         new_cm_alloc=[0 for i in range(len(cms))]
         for i in range(len(cms)):
@@ -92,6 +89,7 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
     j=0
 
+    start_time=time.time()
 
     capacity=[caps[i] for i in range(len(pl_mat[0]))]
 
@@ -99,7 +97,12 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
     link_usage=[l_usage[i] for i in range(len(l_usage))]
 
+    print("#1 time:")
+    print(time.time()-start_time)
+
+
     alloc={}    #flow value allocated to each path
+
 
     for p in paths:
         alloc[p]=0
@@ -113,12 +116,16 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
     paths_state=[0 for i in range(len(pl_mat))]
 
+    cnt=0
+
     while len(unsat_paths)>0:
 
         if j==len(u)-1:
             break
 
         region=(u[j],u[j+1])
+
+        start_time=time.time()
 
         for i in range(len(cms)):
             util=utils[i]
@@ -134,7 +141,10 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
             for p in cms[i]:
                 weights[p]=weight
 
+        print("#2 time:")
+        print(time.time()-start_time)
 
+        start_time=time.time()
         min_delta=math.inf
         for l in range(len(pl_mat[0])):
             if link_usage[l]==0:
@@ -160,6 +170,11 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
         waterlevel+=min_delta
 
+        print("#3 time:")
+        print(time.time()-start_time)
+
+        start_time=time.time()
+
         for p in unsat_paths:
             alloc[p]=alloc[p]+min_delta*splits[p]*weights[p]
             for l in range(len(pl_mat[0])):
@@ -175,11 +190,14 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
                         paths_state[p]=1 #sat
                         splits[p]=0
 
+                time_check=time.time()
                 new_unsat_paths=[]
                 for p in unsat_paths:
                     if paths_state[p]==0:
                         new_unsat_paths.append(p)
                 unsat_paths=new_unsat_paths
+                print("check update time:")
+                print(time.time()-time_check)
 
 
         for cm_i in range(len(cms)):
@@ -204,6 +222,12 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
                     if paths_state[p]==0:
                         splits[p]=splits[p]/unsat_splits
 
+        print("#4 time:")
+        print(time.time()-start_time)
+
+        cnt+=1
+
+    print(cnt)
     return alloc
 
 

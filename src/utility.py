@@ -1,7 +1,19 @@
 import math
 import random
 
+import matplotlib.pyplot as plt
+
+def scale_ufuncs(ufuncs_,scale=100):
+    ufuncs=[]
+    for util in ufuncs_:
+        new_util=[]
+        for pt in util:
+            new_util.append((pt[0],pt[1]*scale))
+        ufuncs.append(new_util)
+    return ufuncs
+
 def elastic_ufunc(x,theta=0.1,beta=0):
+    x=x/10
     return 2/(1+math.exp(-theta*(x-beta)))-1
 
 def realtime_ufunc(x,r=50):
@@ -12,23 +24,25 @@ def realtime_ufunc(x,r=50):
 
 
 def delayadaptive_ufunc(x,theta=0.2,beta=50):
+    x=x/10
     return 1/(1+math.exp(-theta*(x-beta)))
 
 def rateadaptive_ufunc(x,theta=0.2,beta=30,r=40):
+    x=x/10
     if x<r:
         return 0.8*(1/(1+math.exp(-theta*(x-beta))))
     else:
         return 0.8*(1/(1+math.exp(-theta*(x-beta))))+0.5*math.log10(x/r)
 
 
-def realtime_approx(delta=2,r=50):
-    x=[0,r-delta,r+delta,100]
-    y=[0,0.0005*(r-delta),1,1]
+def realtime_approx(delta=20,r=500):
+    x=[0,r-delta,r+delta,1000]
+    y=[0,0.00005*(r-delta),1,1]
     return x,y
 
 
 def get_pl_ufunc(s_type):
-    delta=10
+    delta=100
     x=[]
     y=[]
     if s_type==1:
@@ -154,5 +168,45 @@ def add_noise_to_uvec(u,times):
 
     return new_u
 
+
+def draw_ufunc():
+
+    plt.rcParams['font.family']='serif'
+    plt.rcParams['font.size']=18
+    plt.rcParams['font.weight']='bold'
+    plt.rcParams['axes.labelweight']='bold'
+    plt.rcParams['axes.labelsize']=18
+
+    x=[i*0.1 for i in range(10000)]
+    #y=[elastic_ufunc(i,0.1,0) for i in x]
+    y=[realtime_ufunc(i,500) for i in x]
+    #y=[delayadaptive_ufunc(i) for i in x]
+    #y=[rateadaptive_ufunc(i) for i in x]
+
+    #font=FontProperties()
+    ##font.set_family('serif')
+    #font.set_name('Times New Roman')
+
+    #fig.tight_layout(pad=0)
+
+    fig, ax=plt.subplots()
+
+    fig.subplots_adjust(left=0.135,top=0.995,bottom=0.135,right=0.98)
+
+    ax.plot(x,y,color='b')
+
+    ax.set_ylabel('Utility')
+    ax.set_xlabel('Allocated rate(Mbps)')
+
+    x_a,y_a=get_pl_ufunc(2)
+    ax.plot(x_a,y_a,color='b',marker='^',linestyle='dashed')
+
+
+    #ax.tick_params(labelsize=18)
+
+    #fig.savefig('D:/utility-mmf/scripts/figures/real.pdf')
+    plt.show()
+
 if __name__ == "__main__":
-    write_ufuncs(110,"D:/github/UtiliyUpwardMMF/data/ufuncs/uf_110.txt")
+    write_ufuncs(870,"D:/github/UtiliyUpwardMMF/data/ufuncs/uf_870.txt")
+    #draw_ufunc()
