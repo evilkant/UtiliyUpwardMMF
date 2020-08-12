@@ -9,37 +9,29 @@ import time
 
 def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it):
 
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
+    cm_num=len(cms)
 
-    # paths of interest
-    paths=[]
-    for cm in cms:
-        for p in cm:
-            paths.append(p)
+    link_usage=np.zeros(link_num)
 
-    link_usage=[0 for i in range(len(pl_mat[0]))]
-
-    for p in paths:
-        for l in range(len(pl_mat[0])):
-            if pl_mat[p][l]==1:
+    for p in range(path_num):
+        for l in range(link_num):
+            if pl_mat[p,l]==1:
                 link_usage[l]=1
 
-    alloc={}    #flow value allocated to each path
-
-    for p in paths:
-        alloc[p]=0
+    path_alloc=np.zeros(path_num)    #flow value allocated to each path
     
-    cm_alloc=[0 for i in range(len(cms))]
-
-
-    diff=[10 for i in range(len(paths))]    #difference between two iterations
+    cm_alloc=np.zeros(cm_num)
     
-    th=0.00001 #threshold for stopping iterating
+    th=0.01 #threshold for stopping iterating
+
 
     splits=initial_splits
 
-    diffs=[]    #difference after each iterationo
+    diffs=[]    #difference after each iteration
 
-    d=1
+    current_diff=10000
 
     u=utility.get_util_vec(ufuncs)
     #u=utility.add_noise_to_uvec(u,9)
@@ -47,74 +39,77 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it):
 
 
     iteration=0
-    while iteration<it and d>th:
+    while iteration<it and current_diff>th:
         iteration+=1
         print("iteration #"+str(iteration))
 
         start_time=time.time()
-        new_alloc=wf(pl_mat,cms,paths,splits,caps,link_usage,ufuncs,u)
+        new_path_alloc=wf(pl_mat,cms,splits,caps,link_usage,ufuncs,u)
         print("time is:")
         print(time.time()-start_time)
 
-        new_cm_alloc=[0 for i in range(len(cms))]
-        for i in range(len(cms)):
+        new_cm_alloc=np.zeros(cm_num)
+        for i in range(cm_num):
             for p in cms[i]:
-                new_cm_alloc[i]+=new_alloc[p]
+                new_cm_alloc[i]+=new_path_alloc[p]
 
-        diff=[]
-        for p in paths:
-            diff.append(new_alloc[p]-alloc[p])
+        alloc_diff=new_path_alloc-path_alloc
 
-        alloc_ls=[alloc[p] for p in range(len(paths))]  #convert dict to ls
+        if iteration>1:
+            current_diff=np.linalg.norm(alloc_diff,2)/np.linalg.norm(path_alloc,2)
+            diffs.append(current_diff)
 
-        d=np.linalg.norm(diff,2)/np.linalg.norm(alloc_ls,2)
-        diffs.append(d)
-
-        alloc=new_alloc
+        path_alloc=new_path_alloc
         cm_alloc=new_cm_alloc
 
-        #print(cm_alloc)
-
-        for i in range(len(cms)):
+        for i in range(cm_num):
             for p in cms[i]:
-                splits[p]=alloc[p]/cm_alloc[i]
+                splits[p]=path_alloc[p]/cm_alloc[i]
 
-    return cm_alloc,diffs[1:]
+    return cm_alloc,diffs
             
 
 
 
 
-def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
+def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
+
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
 
     j=0
 
-    start_time=time.time()
+    #start_time=time.time()
 
-    capacity=[caps[i] for i in range(len(pl_mat[0]))]
+    capacity=[caps[i] for i in range(link_num)]
+    capacity=np.array(capacity)
 
-    unsat_paths=[paths[i] for i in range(len(paths))]
+    unsat_paths=[i for i in range(path_num)]
+    unsat_paths=np.array(unsat_paths)
 
     link_usage=[l_usage[i] for i in range(len(l_usage))]
+    link_usage=np.array(link_usage)
 
-    print("#1 time:")
-    print(time.time()-start_time)
-
-
-    alloc={}    #flow value allocated to each path
+    #print("#1 time:")
+    #print(time.time()-start_time)
 
 
-    for p in paths:
-        alloc[p]=0
+    alloc=np.zeros(path_num)    #flow value allocated to each path
 
-    #sat_paths=[]
-    sat_cms=[]
 
-    weights={}
+    unsat_cms=[i for i in range(len(cms))]
+    unsat_cms=np.array(unsat_cms)
+
+    cms_state=np.zeros(len(cms))
+
+
+    weights=np.zeros(path_num)
+
+    path_delta=np.zeros(path_num)
 
     waterlevel=0
 
-    paths_state=[0 for i in range(len(pl_mat))]
+    paths_state=np.zeros(path_num)
 
     cnt=0
 
@@ -125,7 +120,7 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
         region=(u[j],u[j+1])
 
-        start_time=time.time()
+        #start_time=time.time()
 
         for i in range(len(cms)):
             util=utils[i]
@@ -141,23 +136,38 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
             for p in cms[i]:
                 weights[p]=weight
 
-        print("#2 time:")
-        print(time.time()-start_time)
+        #print("#2 time:")
+        #print(time.time()-start_time)
 
-        start_time=time.time()
-        min_delta=math.inf
-        for l in range(len(pl_mat[0])):
-            if link_usage[l]==0:
-                continue
-            prop=0
-            for p in unsat_paths:
-                if pl_mat[p][l]==1:
-                    prop+=splits[p]*weights[p]
-            delta=math.inf
-            if prop>0:
-                delta=capacity[l]/prop
-            if delta<min_delta:
-                min_delta=delta
+
+        #start_time=time.time()
+
+        path_delta=weights*splits
+        link_shares=np.zeros(link_num)
+        for l in range(link_num):
+            l_delta=np.dot(path_delta,pl_mat[:,l])
+            if l_delta>0:
+                link_shares[l]=capacity[l]/l_delta
+            else:
+                link_shares[l]=math.inf
+
+        min_share=np.amin(link_shares)
+
+        min_delta=min_share
+
+        #min_delta=math.inf
+        #for l in range(len(pl_mat[0])):
+        #    if link_usage[l]==0:
+        #        continue
+        #    prop=0
+        #    for p in unsat_paths:
+        #        if pl_mat[p][l]==1:
+        #            prop+=splits[p]*weights[p]
+        #    delta=math.inf
+        #    if prop>0:
+        #        delta=capacity[l]/prop
+        #    if delta<min_delta:
+        #        min_delta=delta
         
         if waterlevel+min_delta>=region[1]:
             min_delta=region[1]-waterlevel
@@ -170,37 +180,57 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
 
         waterlevel+=min_delta
 
-        print("#3 time:")
-        print(time.time()-start_time)
+        #print("#3 time:")
+        #print(time.time()-start_time)
 
         start_time=time.time()
 
-        for p in unsat_paths:
-            alloc[p]=alloc[p]+min_delta*splits[p]*weights[p]
-            for l in range(len(pl_mat[0])):
-                if pl_mat[p][l]==1:
-                    capacity[l]-=min_delta*splits[p]*weights[p]
+        alloc_delta=path_delta*min_delta
+        alloc=alloc+alloc_delta
 
-        for l in range(len(pl_mat[0])):
+        for l in range(link_num):
+            capacity[l]-=np.dot(alloc_delta,pl_mat[:,l])
             if link_usage[l]!=0 and capacity[l]<0.01:
                 link_usage[l]=0
-                #print("link "+str(l) +" saturates at "+str(waterlevel))
                 for p in unsat_paths:
-                    if pl_mat[p][l]==1:
+                    if pl_mat[p,l]==1:
                         paths_state[p]=1 #sat
                         splits[p]=0
 
-                time_check=time.time()
-                new_unsat_paths=[]
-                for p in unsat_paths:
-                    if paths_state[p]==0:
-                        new_unsat_paths.append(p)
-                unsat_paths=new_unsat_paths
-                print("check update time:")
-                print(time.time()-time_check)
+        new_unsat_paths=[]
+        for p in unsat_paths:
+            if paths_state[p]==0:
+                new_unsat_paths.append(p)
+        unsat_paths=new_unsat_paths
 
 
-        for cm_i in range(len(cms)):
+        #for p in unsat_paths:
+        #    alloc_delta[p]=min_delta*path_delta[p]
+        #    for l in range(link_num):
+        #        if pl_mat[p,l]==1:
+        #            #print("L:"+str(l)+",p:"+str(p))
+        #            capacity[l]-=min_delta*splits[p]*weights[p]
+
+        #for l in range(link_num):
+        #    if link_usage[l]!=0 and capacity[l]<0.01:
+        #        link_usage[l]=0
+                #print("link "+str(l) +" saturates at "+str(waterlevel))
+        #       for p in unsat_paths:
+        #           if pl_mat[p,l]==1:
+        #               paths_state[p]=1 #sat
+        #               splits[p]=0
+
+        #       time_check=time.time()
+        #       new_unsat_paths=[]
+        #       for p in unsat_paths:
+        #           if paths_state[p]==0:
+        #               new_unsat_paths.append(p)
+        #       unsat_paths=new_unsat_paths
+        #       print("check update time:")
+        #       print(time.time()-time_check)
+
+
+        for cm_i in unsat_cms:
             unsat_num=0
             unsat_splits=0
             for p in cms[cm_i]:
@@ -208,9 +238,7 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
                     unsat_num+=1
                     unsat_splits+=splits[p]
             if unsat_num==0:
-                if cm_i not in sat_cms:
-                    sat_cms.append(cm_i)
-                    #print(str(cm_i)+' sats in '+str(waterlevel))
+                cms_state[cm_i]=1 #sat
                 continue
             if unsat_splits==0:
                 s=1/unsat_num
@@ -222,12 +250,18 @@ def wf(pl_mat,cms,paths,splits,caps,l_usage,utils,u):
                     if paths_state[p]==0:
                         splits[p]=splits[p]/unsat_splits
 
-        print("#4 time:")
-        print(time.time()-start_time)
+        new_unsat_cms=[]
+        for cm_i in unsat_cms:
+            if cms_state[cm_i]==0:#unsat
+                new_unsat_cms.append(cm_i)
+        unsat_cms=new_unsat_cms
+
+        #print("#4 time:")
+        #print(time.time()-start_time)
 
         cnt+=1
 
-    print(cnt)
+    print("cnt is "+str(cnt))
     return alloc
 
 
@@ -287,14 +321,17 @@ def uniform_splits(commodities):
 
 def exp_decay_splits(commodities,pl_mat):
 
-    splits={}
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
+
+    splits=np.zeros(path_num)
 
     for cm in commodities:
         p_len={}
         for p in cm:
             length=0
-            for l in range(len(pl_mat[0])):
-                if pl_mat[p][l]==1:
+            for l in range(link_num):
+                if pl_mat[p,l]==1:
                     length+=1
             p_len[p]=length
         sorted_p=sorted(p_len.items(),key=lambda x:x[1])

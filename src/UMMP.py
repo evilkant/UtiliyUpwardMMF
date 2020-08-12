@@ -8,21 +8,20 @@ import time
 
 def max_min_program(pl_mat, cms, c, utils, k):
 
-    paths = []  # paths that are involved
-    for cm in cms:
-        for p in cm:
-            paths.append(p)
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
+    cm_num=len(cms)
 
     u = utility.get_util_vec(utils)
 
     u_index = 0  # u_index is 0 at first, region [0,...)
 
     # all commodities are active commodity when starting
-    active_cms = [i for i in range(len(cms))]
+    active_cms = [i for i in range(cm_num)]
     # allocation is initialized to be 0
-    cms_alloc = [0 for i in range(len(cms))]
+    cms_alloc = [0 for i in range(cm_num)]
     frozen_cms = []  # no frozen cms yet
-    paths_alloc = [0 for i in range(len(paths))]  # path allocation is also 0
+    paths_alloc = [0 for i in range(path_num)]  # path allocation is also 0
 
     threshold = 0.001  # threshold for identifying blocked commodities
 
@@ -35,19 +34,26 @@ def max_min_program(pl_mat, cms, c, utils, k):
 
     i = 0
 
+    cms_alloc=np.zeros(cm_num)
+
     while len(active_cms) > len(cms)-k:
 
         print("iteration #"+str(iteration))
 
+        print("number of active cm: "+str(len(active_cms)))
+
+        print("utility region is: ["+str(u[u_index])+","+str(u[u_index+1])+"]")
+
         start_time = time.time()
 
+        #sol = P(pl_mat, cms, c, active_cms, frozen_cms,
+        #        cms_alloc, utils, u, u_index, paths, utils_index)
+
         sol = fast_P(pl_mat, cms, c, active_cms, frozen_cms,
-                cms_alloc, utils, u, u_index, paths,utils_index)
+                cms_alloc, utils, u, u_index, utils_index)
 
         print("LP solving takes time:")
         print(time.time()-start_time)
-
-        #start_time = time.time()
 
         if sol['status'] != 'optimal':
             print("LP solver went wrong\n")
@@ -57,27 +63,22 @@ def max_min_program(pl_mat, cms, c, utils, k):
         d_vars = sol['z']
         t = p_vars[-1]
 
-        print('optimal t is:')
-        print(t)
+        print('optimal t is: '+str(t))
 
         if abs(t-u[u_index+1]) < 0.00001:  # the right end of region is reached
             u_index += 1
             if u_index != len(u)-1:  # if utility is not maxium
-                #print("rest takes time:")
-                #print(time.time()-start_time)
                 iteration += 1
                 continue
 
-        print("within utility region")
-        start_time = time.time()
-        cms_alloc = []
-        for cm in cms:
+        #start_time = time.time()
+        for cm_i in range(cm_num):
             cm_alloc = 0
-            for p in cm:
-                cm_alloc += p_vars[paths.index(p)]
-            cms_alloc.append(cm_alloc)
+            for p in cms[cm_i]:
+                cm_alloc += p_vars[p]
+            cms_alloc[cm_i]=cm_alloc
 
-        if u_index == len(u)-1 or abs(t-100) < 0.01:  # maximum utility is reached
+        if u_index == len(u)-1 or abs(t-100) < 0.0000001:  # maximum utility is reached
             print('waterlevel reachs 100')
             break
 
@@ -99,22 +100,22 @@ def max_min_program(pl_mat, cms, c, utils, k):
 
         iteration += 1
 
-        print("The rest  takes time:")
-        print(time.time()-start_time)
+        #print("The rest  takes time:")
+        #print(time.time()-start_time)
 
     return cms_alloc, paths_alloc, []
 
 
-def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_index, paths, utils_index):
-    path_num = len(paths)
-    link_num = len(pl_mat[0])
+def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_index, utils_index):
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
 
     var_num = path_num+1  # number of variables [f1,f2,...,fn,t]
     G=matrix(0.0,(len(cms)+link_num+path_num+2,var_num),'d')
     h=matrix(0.0,(len(cms)+link_num+path_num+2,1),'d')
     c=matrix(0.0,(var_num,1),'d')
 
-    print(G.size)
+    #print(G.size)
 
     c[-1]=-1.0
 
@@ -154,14 +155,13 @@ def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_ind
 
 
     for l in range(link_num):
-        for i in range(len(paths)):
-            if pl_mat[paths[i]][l] == 1:
-                G[ct_i,i] = 1
+        for p in range(path_num):
+            if pl_mat[p,l] == 1:
+                G[ct_i,p] = 1
         h[ct_i,0]=caps[l]
         ct_i+=1
 
     for p_i in range(path_num):
-        a = [0.0 for i in range(var_num)]
         G[ct_i,p_i] = -1.0
         h[ct_i,0]=0
         ct_i+=1
@@ -171,7 +171,7 @@ def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_ind
     ct_i+=1
 
     G[ct_i,var_num-1] = -1.0
-    h[ct_i,0]=-u[u_index+1]
+    h[ct_i,0]=-u[u_index]
 
     sol = solvers.lp(c, G, h, solver='glpk')
 
@@ -183,7 +183,7 @@ def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_ind
 
 
 
-def P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_index, paths, utils_index):
+def P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_index, utils_index):
 
     # formulate a LP: min cx s.t. Ax<=b  and solve it
 

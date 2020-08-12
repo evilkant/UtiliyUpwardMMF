@@ -3,6 +3,8 @@ import random
 
 import matplotlib.pyplot as plt
 
+factor=20
+
 def scale_ufuncs(ufuncs_,scale=100):
     ufuncs=[]
     for util in ufuncs_:
@@ -13,10 +15,10 @@ def scale_ufuncs(ufuncs_,scale=100):
     return ufuncs
 
 def elastic_ufunc(x,theta=0.1,beta=0):
-    x=x/10
+    x=x/factor
     return 2/(1+math.exp(-theta*(x-beta)))-1
 
-def realtime_ufunc(x,r=50):
+def realtime_ufunc(x,r=1000):
     if x<r:
         return 0
     else:
@@ -24,25 +26,25 @@ def realtime_ufunc(x,r=50):
 
 
 def delayadaptive_ufunc(x,theta=0.2,beta=50):
-    x=x/10
+    x=x/factor
     return 1/(1+math.exp(-theta*(x-beta)))
 
 def rateadaptive_ufunc(x,theta=0.2,beta=30,r=40):
-    x=x/10
+    x=x/factor
     if x<r:
         return 0.8*(1/(1+math.exp(-theta*(x-beta))))
     else:
         return 0.8*(1/(1+math.exp(-theta*(x-beta))))+0.5*math.log10(x/r)
 
 
-def realtime_approx(delta=20,r=500):
-    x=[0,r-delta,r+delta,1000]
+def realtime_approx(delta=40,r=1000):
+    x=[0,r-delta,r+delta,2000]
     y=[0,0.00005*(r-delta),1,1]
     return x,y
 
 
 def get_pl_ufunc(s_type):
-    delta=100
+    delta=10*factor
     x=[]
     y=[]
     if s_type==1:
@@ -83,8 +85,8 @@ def generate_ufunc():
     for i in range(len(x)):
         if abs(1-y[i])<0.01:
             util.append((x[i],1))
-            if x[i]!=100:
-                util.append((100,1))
+            if x[i]!=100*factor:
+                util.append((100*factor,1))
             break
         util.append((x[i],y[i]))
     return util
@@ -208,5 +210,5 @@ def draw_ufunc():
     plt.show()
 
 if __name__ == "__main__":
-    write_ufuncs(870,"D:/github/UtiliyUpwardMMF/data/ufuncs/uf_870.txt")
+    write_ufuncs(2450,"../data/ufuncs/uf_2450.txt")
     #draw_ufunc()

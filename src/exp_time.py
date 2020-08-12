@@ -83,17 +83,23 @@ if __name__ == '__main__':
         "../data/ufuncs/uf_2450.txt")
     scaled_ufuncs = utility.scale_ufuncs(ufuncs)
 
-    # pl_mat,cms,c=topo.read_data('D:/github/UtiliyUpwardMMF/data/topologies/waxman_30_2_870.txt')
-    # ufuncs=utility.read_ufuncs("D:/github/UtiliyUpwardMMF/data/ufuncs/uf_870.txt")
 
     new_c = [10000.0 for i in range(len(c))]
     c = new_c
 
+    pl_mat=np.matrix(pl_mat)
+
     start_time = time.time()
-    # i nitial_splits=UIEWF.exp_decay_splits(cms,pl_mat)
-    # cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,ufuncs,5)
     cms_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
         pl_mat, cms, c, scaled_ufuncs, len(cms))
     tot_time = time.time()-start_time
-    print(tot_time)
-    print(sorted(cms_alloc))
+    print("UMMP total time is "+str(tot_time))
+
+
+    start_time = time.time()
+    initial_splits=UIEWF.exp_decay_splits(cms,pl_mat)
+    cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,ufuncs,50)
+    tot_time = time.time()-start_time
+    print("UIEWF total time is "+str(tot_time))
+    #print(diffs)
+    #print(sorted(cms_alloc))
