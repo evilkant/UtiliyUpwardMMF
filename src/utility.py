@@ -39,7 +39,7 @@ def rateadaptive_ufunc(x,theta=0.2,beta=30,r=40):
 
 def realtime_approx(delta=40,r=1000):
     x=[0,r-delta,r+delta,2000]
-    y=[0,0.00005*(r-delta),1,1]
+    y=[0,0.00003*(r-delta),1,1]
     return x,y
 
 
@@ -91,7 +91,8 @@ def generate_ufunc():
         util.append((x[i],y[i]))
     return util
 
-def write_ufuncs(cms_num,fp):
+def write_ufuncs(cms_num):
+    fp="../data/ufuncs/uf_"+str(cms_num)+".txt"
     with open(fp,'w',encoding='utf-8') as f:
         while cms_num>0:
             util=generate_ufunc()
@@ -126,15 +127,20 @@ def flow2util(ufuncs,cms_alloc):
         ufunc=ufuncs[i]
         alloc=cms_alloc[i]
 
+        flag=0
+
         for idx in range(len(ufunc)-1):
             if ufunc[idx][0]<=alloc and alloc<=ufunc[idx+1][0]:
                 k=(ufunc[idx+1][1]-ufunc[idx][1])/(ufunc[idx+1][0]-ufunc[idx][0])
                 util=ufunc[idx][1]+(alloc-ufunc[idx][0])*k
                 utils.append(util)
+                flag=1
                 break
-            elif alloc>100:
+        if flag==0:
+            if alloc>=2000:
                 utils.append(1)
-                break
+            else:
+                print("error converting flow to util")
         
     return utils
 
@@ -179,11 +185,11 @@ def draw_ufunc():
     plt.rcParams['axes.labelweight']='bold'
     plt.rcParams['axes.labelsize']=18
 
-    x=[i*0.1 for i in range(10000)]
+    x=[i*0.1 for i in range(20000)]
     #y=[elastic_ufunc(i,0.1,0) for i in x]
-    y=[realtime_ufunc(i,500) for i in x]
+    #y=[realtime_ufunc(i,1000) for i in x]
     #y=[delayadaptive_ufunc(i) for i in x]
-    #y=[rateadaptive_ufunc(i) for i in x]
+    y=[rateadaptive_ufunc(i) for i in x]
 
     #font=FontProperties()
     ##font.set_family('serif')
@@ -200,7 +206,7 @@ def draw_ufunc():
     ax.set_ylabel('Utility')
     ax.set_xlabel('Allocated rate(Mbps)')
 
-    x_a,y_a=get_pl_ufunc(2)
+    x_a,y_a=get_pl_ufunc(4)
     ax.plot(x_a,y_a,color='b',marker='^',linestyle='dashed')
 
 
@@ -210,5 +216,5 @@ def draw_ufunc():
     plt.show()
 
 if __name__ == "__main__":
-    write_ufuncs(2450,"../data/ufuncs/uf_2450.txt")
+    write_ufuncs(50*49)
     #draw_ufunc()

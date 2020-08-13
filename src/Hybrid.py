@@ -2,34 +2,33 @@ import UMMP
 import UIEWF
 import utility
 import topo
+import numpy as np
 
-def hybrid_alloc(pl_mat,cms,c,ufuncs,it,k):
+def hybrid_alloc(pl_mat,cms,c,ufuncs,it,th,k):
 
-    paths=[]
-    for cm in cms:
-        for p in cm:
-            paths.append(p)
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
     
     cms_alloc,paths_alloc,active_cms=UMMP.max_min_program(pl_mat,cms,c,ufuncs,k)
 
 
-    splits={}
+    splits=np.zeros(path_num)
     paths_alloc=list(paths_alloc)
 
 
     for cm in cms:
         flow_sum=0
         for p in cm:
-            flow_sum+=paths_alloc[paths.index(p)]
+            flow_sum+=paths_alloc[p]
         if flow_sum==0:
             for p in cm:
                 splits[p]=1/len(cm)
         else:
             for p in cm:
-                splits[p]=paths_alloc[paths.index(p)]/flow_sum
+                splits[p]=paths_alloc[p]/flow_sum
 
      
-    cms_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,splits,ufuncs,it)
+    cms_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,splits,ufuncs,it,th)
     return cms_alloc,diffs
 
 if __name__=='__main__':

@@ -157,8 +157,9 @@ def write_random_data(node_num,path_num,cms_num):
     G=wm_graph(node_num)
     cms,pl_mat=graph2input(G,path_num,cms_num)
     caps=[500 for i in range(len(G.edges()))]
-    write_data(pl_mat,cms,caps,"D:/github/UtiliyUpwardMMF/data/topologies/waxman_"+str(node_num)+'_'+str(path_num)+'_'+str(cms_num)+".txt")
+    write_data(pl_mat,cms,caps,"../data/topologies/waxman_"+str(node_num)+'_'+str(path_num)+'_'+str(cms_num)+".txt")
 
 if __name__=="__main__":
     #write_abilene_data(2,110)
-    write_random_data(50,2,50*49)
+    #write_random_data(30,4,30*29)
+    write_random_data(50,3,50*49)

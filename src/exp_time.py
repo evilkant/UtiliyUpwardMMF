@@ -6,6 +6,7 @@ import topo
 import time
 import numpy as np
 import UMMP
+import Hybrid
 
 
 def running_time():
@@ -78,28 +79,39 @@ def running_time():
 if __name__ == '__main__':
     # running_time()
     pl_mat, cms, c = topo.read_data(
-        '../data/topologies/waxman_50_2_2450.txt')
+        '../data/topologies/waxman_30_2_870.txt')
     ufuncs = utility.read_ufuncs(
-        "../data/ufuncs/uf_2450.txt")
+        "../data/ufuncs/uf_870.txt")
+
     scaled_ufuncs = utility.scale_ufuncs(ufuncs)
 
 
-    new_c = [10000.0 for i in range(len(c))]
+    new_c = [5000.0 for i in range(len(c))]
     c = new_c
 
     pl_mat=np.matrix(pl_mat)
 
     start_time = time.time()
-    cms_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
+    cm_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
         pl_mat, cms, c, scaled_ufuncs, len(cms))
-    tot_time = time.time()-start_time
-    print("UMMP total time is "+str(tot_time))
+    tot_time_1 = time.time()-start_time
+    #print("UMMP total time is "+str(tot_time))
 
 
     start_time = time.time()
-    initial_splits=UIEWF.exp_decay_splits(cms,pl_mat)
-    cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,ufuncs,50)
-    tot_time = time.time()-start_time
-    print("UIEWF total time is "+str(tot_time))
+    initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
+    cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,scaled_ufuncs,it=10,th=0.03)
+    tot_time_2 = time.time()-start_time
+    #print("UIEWF total time is "+str(tot_time))
+
+    start_time = time.time()
+    cm_alloc,diffs=Hybrid.hybrid_alloc(pl_mat,cms,c,scaled_ufuncs,it=10,th=0.03,k=500)
+    tot_time_3 = time.time()-start_time
+    #print("Hybrid total time is "+str(tot_time))
+
+    print("UMMP total time is "+str(tot_time_1))
+    print("UIEWF total time is "+str(tot_time_2))
+    print("Hybrid total time is "+str(tot_time_3))
+
     #print(diffs)
     #print(sorted(cms_alloc))

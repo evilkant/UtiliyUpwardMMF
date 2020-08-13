@@ -7,7 +7,7 @@ import topo
 import time
 
 
-def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it):
+def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it=20,th=0.01):
 
     path_num=pl_mat.shape[0]
     link_num=pl_mat.shape[1]
@@ -24,7 +24,7 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it):
     
     cm_alloc=np.zeros(cm_num)
     
-    th=0.01 #threshold for stopping iterating
+    #th=0.0000001 #threshold for stopping iterating
 
 
     splits=initial_splits
@@ -120,7 +120,7 @@ def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
 
         region=(u[j],u[j+1])
 
-        #start_time=time.time()
+        start_time=time.time()
 
         for i in range(len(cms)):
             util=utils[i]
@@ -140,7 +140,7 @@ def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
         #print(time.time()-start_time)
 
 
-        #start_time=time.time()
+        start_time=time.time()
 
         path_delta=weights*splits
         link_shares=np.zeros(link_num)
@@ -155,19 +155,6 @@ def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
 
         min_delta=min_share
 
-        #min_delta=math.inf
-        #for l in range(len(pl_mat[0])):
-        #    if link_usage[l]==0:
-        #        continue
-        #    prop=0
-        #    for p in unsat_paths:
-        #        if pl_mat[p][l]==1:
-        #            prop+=splits[p]*weights[p]
-        #    delta=math.inf
-        #    if prop>0:
-        #        delta=capacity[l]/prop
-        #    if delta<min_delta:
-        #        min_delta=delta
         
         if waterlevel+min_delta>=region[1]:
             min_delta=region[1]-waterlevel
@@ -203,31 +190,6 @@ def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
                 new_unsat_paths.append(p)
         unsat_paths=new_unsat_paths
 
-
-        #for p in unsat_paths:
-        #    alloc_delta[p]=min_delta*path_delta[p]
-        #    for l in range(link_num):
-        #        if pl_mat[p,l]==1:
-        #            #print("L:"+str(l)+",p:"+str(p))
-        #            capacity[l]-=min_delta*splits[p]*weights[p]
-
-        #for l in range(link_num):
-        #    if link_usage[l]!=0 and capacity[l]<0.01:
-        #        link_usage[l]=0
-                #print("link "+str(l) +" saturates at "+str(waterlevel))
-        #       for p in unsat_paths:
-        #           if pl_mat[p,l]==1:
-        #               paths_state[p]=1 #sat
-        #               splits[p]=0
-
-        #       time_check=time.time()
-        #       new_unsat_paths=[]
-        #       for p in unsat_paths:
-        #           if paths_state[p]==0:
-        #               new_unsat_paths.append(p)
-        #       unsat_paths=new_unsat_paths
-        #       print("check update time:")
-        #       print(time.time()-time_check)
 
 
         for cm_i in unsat_cms:
@@ -265,23 +227,67 @@ def wf(pl_mat,cms,splits,caps,l_usage,utils,u):
     return alloc
 
 
-def congestion_splits(commodities,pl_mat):
+def exp_congestion_decay_splits(commodities,pl_mat):
+
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
+
 
     link_congestion=np.sum(np.array(pl_mat),axis=0)
 
-    splits={}
-    max_congestion={}
+    print(link_congestion)
+
+    splits=np.zeros(path_num)
+
     for cm in commodities:
+        
+        max_congestion={}
+
+        for p in cm:
+            max_congestion[p]=0
+            for l in range(link_num):
+                if pl_mat[p,l]==1:
+                    if link_congestion[l]>max_congestion[p]:
+                        max_congestion[p]=link_congestion[l]
+
+        sorted_p=sorted(max_congestion.items(),key=lambda x:x[1],reverse=False)
+
+        total=0
+        for i in range(len(sorted_p)):
+            total+=1/(10**i)
+        for i in range(len(sorted_p)):
+            splits[sorted_p[i][0]]=(1/(10**i))/total
+
+    return splits
+
+
+def congestion_splits(commodities,pl_mat):
+
+    path_num=pl_mat.shape[0]
+    link_num=pl_mat.shape[1]
+
+
+    link_congestion=np.sum(np.array(pl_mat),axis=0)
+
+    print(link_congestion)
+
+    splits=np.zeros(path_num)
+
+    for cm in commodities:
+        
+        max_congestion={}
+
         total=0
         for p in cm:
             max_congestion[p]=0
-            for l in range(len(pl_mat[0])):
-                if pl_mat[p][l]==1:
+            for l in range(link_num):
+                if pl_mat[p,l]==1:
                     if link_congestion[l]>max_congestion[p]:
                         max_congestion[p]=link_congestion[l]
-            total+=1/max_congestion[p]
+            total+=max_congestion[p]
+
         for p in cm:
-            splits[p]=(1/max_congestion[p])/total
+            splits[p]=max_congestion[p]/total
 
     return splits
 
@@ -292,8 +298,8 @@ def random_splits(commodities):
         for p in cm:
             paths.append(p)
     
-    splits={}
-    weights={}
+    splits=np.zeros(len(paths))
+    weights=np.zeros(len(paths))
     for cm in commodities:
         total=0
         for p in cm:
@@ -304,13 +310,35 @@ def random_splits(commodities):
         
     return splits
 
+def random_decay_splits(commodities):
+    paths=[]
+    for cm in commodities:
+        for p in cm:
+            paths.append(p)
+    
+    splits=np.zeros(len(paths))
+    weights={}
+    for cm in commodities:
+        for p in cm:
+            weights[p]=random.randint(1,10)
+
+        sorted_p=sorted(weights.items(),key=lambda x:x[1],reverse=False)
+
+        total=0
+        for i in range(len(sorted_p)):
+            total+=1/(10**i)
+        for i in range(len(sorted_p)):
+            splits[sorted_p[i][0]]=(1/(10**i))/total
+        
+    return splits
+
 def uniform_splits(commodities):
     paths=[]
     for cm in commodities:
         for p in cm:
             paths.append(p)
     
-    splits={}
+    splits=np.zeros(len(paths))
     for cm in commodities:
         total=len(cm)
         for p in cm:
