@@ -216,5 +216,5 @@ def draw_ufunc():
     plt.show()
 
 if __name__ == "__main__":
-    write_ufuncs(50*49)
+    write_ufuncs(30*29)
     #draw_ufunc()

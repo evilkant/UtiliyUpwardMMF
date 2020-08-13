@@ -86,7 +86,7 @@ if __name__ == '__main__':
     scaled_ufuncs = utility.scale_ufuncs(ufuncs)
 
 
-    new_c = [5000.0 for i in range(len(c))]
+    new_c = [10000.0 for i in range(len(c))]
     c = new_c
 
     pl_mat=np.matrix(pl_mat)
