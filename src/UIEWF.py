@@ -43,10 +43,10 @@ def Util_IEWF(pl_mat,cms,caps,initial_splits,ufuncs,it=20,th=0.01):
         iteration+=1
         print("iteration #"+str(iteration))
 
-        start_time=time.time()
+        #start_time=time.time()
         new_path_alloc=wf(pl_mat,cms,splits,caps,link_usage,ufuncs,u)
-        print("time is:")
-        print(time.time()-start_time)
+        #print("time is:")
+        #print(time.time()-start_time)
 
         new_cm_alloc=np.zeros(cm_num)
         for i in range(cm_num):
@@ -235,7 +235,7 @@ def exp_congestion_decay_splits(commodities,pl_mat):
 
     link_congestion=np.sum(np.array(pl_mat),axis=0)
 
-    print(link_congestion)
+    #print(link_congestion)
 
     splits=np.zeros(path_num)
 

@@ -60,7 +60,7 @@ def performance_abilene():
     util_alloc=utility.flow2util(ufuncs,cm_alloc)
     ax.plot(x,sorted(util_alloc),label='Hybrid-20',linestyle='dashed')
 
-    ax.set_xticks(np.arange(0,111,step=10))
+    ax.set_xticks(np.arange(0,101,step=10))
     ax.set_ylabel('Utility')
     ax.set_xlabel('Commodity Index')
 
@@ -84,12 +84,12 @@ def performance_waxman():
     pl_mat, cms, c = topo.read_data(
         '../data/topologies/waxman_30_3_870.txt')
     ufuncs = utility.read_ufuncs(
-        "../data/ufuncs/uf_870_perf.txt")
+        "../data/ufuncs/uf_870_v4.txt")
 
     scaled_ufuncs = utility.scale_ufuncs(ufuncs)
 
 
-    new_c = [10000.0 for i in range(len(c))]
+    new_c = [4000.0 for i in range(len(c))]
     c = new_c
 
     pl_mat=np.matrix(pl_mat)
@@ -103,14 +103,15 @@ def performance_waxman():
     util_alloc=utility.flow2util(ufuncs,cm_alloc)
     ax.plot(x,sorted(util_alloc),label='Optimal',linestyle='solid')
 
-    initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
-    cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,scaled_ufuncs,it=20,th=0.001)
-    util_alloc=utility.flow2util(ufuncs,cm_alloc)
-    ax.plot(x,sorted(util_alloc),label='U-IEWF',linestyle='dotted')
+    #initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
+    #cm_alloc,diffs=UIEWF.Util_IEWF(pl_mat,cms,c,initial_splits,scaled_ufuncs,it=20,th=0.001)
+    #util_alloc=utility.flow2util(ufuncs,cm_alloc)
+    #ax.plot(x,sorted(util_alloc),label='U-IEWF',linestyle='dotted')
 
-    cm_alloc,diffs=Hybrid.hybrid_alloc(pl_mat,cms,c,scaled_ufuncs,it=20,th=0.001,k=100)
-    util_alloc=utility.flow2util(ufuncs,cm_alloc)
-    ax.plot(x,sorted(util_alloc),label='Hybrid-100',linestyle='dashed')
+
+    #cm_alloc,diffs=Hybrid.hybrid_alloc(pl_mat,cms,c,scaled_ufuncs,it=20,th=0.001,k=100)
+    #util_alloc=utility.flow2util(ufuncs,cm_alloc)
+    #ax.plot(x,sorted(util_alloc),label='Hybrid-100',linestyle='dashed')
 
     ax.set_xticks(np.arange(0,871,step=100))
     ax.set_ylabel('Utility')
@@ -122,5 +123,5 @@ def performance_waxman():
     plt.show()
 
 if __name__=='__main__':
- 	performance_abilene()
- 	#performance_waxman()
+ 	#performance_abilene()
+ 	performance_waxman()

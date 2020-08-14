@@ -44,7 +44,7 @@ def max_min_program(pl_mat, cms, c, utils, k):
 
         print("utility region is: ["+str(u[u_index])+","+str(u[u_index+1])+"]")
 
-        start_time = time.time()
+        #start_time = time.time()
 
         #sol = P(pl_mat, cms, c, active_cms, frozen_cms,
         #        cms_alloc, utils, u, u_index, paths, utils_index)
@@ -52,8 +52,8 @@ def max_min_program(pl_mat, cms, c, utils, k):
         sol = fast_P(pl_mat, cms, c, active_cms, frozen_cms,
                 cms_alloc, utils, u, u_index, utils_index)
 
-        print("LP solving takes time:")
-        print(time.time()-start_time)
+        #print("LP solving takes time:")
+        #print(time.time()-start_time)
 
         if sol['status'] != 'optimal':
             print("LP solver went wrong\n")
@@ -65,7 +65,7 @@ def max_min_program(pl_mat, cms, c, utils, k):
 
         print('optimal t is: '+str(t))
 
-        if abs(t-u[u_index+1]) < 0.00001:  # the right end of region is reached
+        if abs(t-u[u_index+1]) < 0.0000000001:  # the right end of region is reached
             u_index += 1
             if u_index != len(u)-1:  # if utility is not maxium
                 iteration += 1
@@ -78,8 +78,8 @@ def max_min_program(pl_mat, cms, c, utils, k):
                 cm_alloc += p_vars[p]
             cms_alloc[cm_i]=cm_alloc
 
-        if u_index == len(u)-1 or abs(t-100) < 0.0000001:  # maximum utility is reached
-            print('waterlevel reachs 100')
+        if u_index == len(u)-1 or abs(t-100) < 0.000001:  # maximum utility is reached
+            #print('waterlevel reachs 100')
             break
 
         for i in range(len(active_cms)):
@@ -135,6 +135,8 @@ def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_ind
                 break
 
         k = (util[i+1][1]-util[i][1])/(util[i+1][0]-util[i][0])
+        if(k<0.0001):
+            print("no way!")
         b = util[i][1]-k*util[i][0]
 
         
@@ -173,7 +175,11 @@ def fast_P(pl_mat, cms, caps, active_cms, frozen_cms, cms_alloc, utils, u, u_ind
     G[ct_i,var_num-1] = -1.0
     h[ct_i,0]=-u[u_index]
 
+    #start_time=time.time()
+
     sol = solvers.lp(c, G, h, solver='glpk')
+
+    #print("glpk solving takes time: "+str(time.time()-start_time))
 
     return sol
 

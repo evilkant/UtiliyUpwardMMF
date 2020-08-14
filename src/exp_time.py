@@ -75,8 +75,223 @@ def running_time():
 
     plt.show()
 
+def UMMP_time_dummy():
+    size=[20,30,40]
 
-if __name__ == '__main__':
+    times=[]
+
+    for s in size:
+
+        ufuncs=utility.read_ufuncs("../data/ufuncs/uf_"+str(s*(s-1))+".txt")
+
+        scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+        pl_mat,cms,c=topo.read_data(
+            "../data/topologies/waxman_"+str(s)+"_3_"+str(s*(s-1))+".txt")
+
+        new_c = [10000.0 for i in range(len(c))]
+        c = new_c
+
+        pl_mat=np.matrix(pl_mat)
+
+        start_time = time.time()
+        cm_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
+            pl_mat, cms, c, scaled_ufuncs, len(cms))
+        tot_time = time.time()-start_time
+
+        times.append(tot_time)
+
+    print(times)
+
+def abilene_time():
+
+    time_sum=0
+    for i in range(1,11):
+        ufuncs=utility.read_ufuncs("../data/ufuncs/uf_110"+"_v"+str(i)+".txt")
+
+        scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+        pl_mat,cms,c=topo.read_data(
+            "../data/topologies/abilene_2_110.txt")
+
+        new_c = [10000.0 for i in range(len(c))]
+        c = new_c
+
+        pl_mat=np.matrix(pl_mat)
+
+        start_time = time.time()
+        #cm_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
+        #    pl_mat, cms, c, scaled_ufuncs, len(cms))
+        #initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
+        #cm_alloc,diffs=UIEWF.Util_IEWF(
+        #    pl_mat,cms,c,initial_splits,scaled_ufuncs,it=100,th=0.03)
+        cm_alloc,diffs=Hybrid.hybrid_alloc(
+            pl_mat,cms,c,scaled_ufuncs,it=100,th=0.03,k=0.2*len(cms))
+        tot_time = time.time()-start_time
+
+        time_sum+=tot_time
+    avg_time=time_sum/10
+
+    print("average time is")
+    print(avg_time)
+
+
+
+
+def UMMP_time():
+    size=[20,30,40]
+
+    times=[]
+
+    for s in size:
+
+        time_sum=0
+
+        for i in range(1,11):
+
+            ufuncs=utility.read_ufuncs("../data/ufuncs/uf_"+str(s*(s-1))+"_v"+str(i)+".txt")
+
+            scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+            pl_mat,cms,c=topo.read_data(
+                "../data/topologies/waxman_"+str(s)+"_3_"+str(s*(s-1))+".txt")
+
+            new_c = [10000.0 for i in range(len(c))]
+            c = new_c
+
+            pl_mat=np.matrix(pl_mat)
+
+            start_time = time.time()
+            cm_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
+                pl_mat, cms, c, scaled_ufuncs, len(cms))
+            tot_time = time.time()-start_time
+
+            time_sum+=tot_time
+
+        avg_time=time_sum/10
+
+        times.append(avg_time)
+
+    print(times)
+
+def UIEWF_time():
+    size=[20,30,40]
+
+    times=[]
+
+    for s in size:
+
+        time_sum=0
+
+        for i in range(1,11):
+
+            ufuncs=utility.read_ufuncs("../data/ufuncs/uf_"+str(s*(s-1))+"_v"+str(i)+".txt")
+
+            scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+            pl_mat,cms,c=topo.read_data(
+                "../data/topologies/waxman_"+str(s)+"_3_"+str(s*(s-1))+".txt")
+
+            new_c = [10000.0 for i in range(len(c))]
+            c = new_c
+
+            pl_mat=np.matrix(pl_mat)
+
+            start_time = time.time()
+            initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
+            cm_alloc,diffs=UIEWF.Util_IEWF(
+                pl_mat,cms,c,initial_splits,scaled_ufuncs,it=100,th=0.03)
+            tot_time = time.time()-start_time
+
+            time_sum+=tot_time
+
+        avg_time=time_sum/10
+
+        times.append(avg_time)
+
+    print(times)
+
+def Hybrid_time():
+    size=[40]
+
+    times=[]
+
+    for s in size:
+
+        time_sum=0
+
+        for i in range(1,11):
+
+            ufuncs=utility.read_ufuncs("../data/ufuncs/uf_"+str(s*(s-1))+"_v"+str(i)+".txt")
+
+            scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+            pl_mat,cms,c=topo.read_data(
+                "../data/topologies/waxman_"+str(s)+"_3_"+str(s*(s-1))+".txt")
+
+            new_c = [10000.0 for i in range(len(c))]
+            c = new_c
+
+            pl_mat=np.matrix(pl_mat)
+
+            start_time = time.time()
+            cm_alloc,diffs=Hybrid.hybrid_alloc(
+                pl_mat,cms,c,scaled_ufuncs,it=100,th=0.03,k=0.2*len(cms))
+            tot_time = time.time()-start_time
+
+            time_sum+=tot_time
+
+        avg_time=time_sum/10
+
+        times.append(avg_time)
+
+    print(times)
+
+def congestion_time():
+
+    caps=[4000.0,6000.0,8000.0,10000.0]
+
+    times=[]
+
+    for cap in caps:
+
+        time_sum=0
+
+        for i in range(1,11):
+
+            ufuncs=utility.read_ufuncs("../data/ufuncs/uf_870"+"_v"+str(i)+".txt")
+
+            scaled_ufuncs = utility.scale_ufuncs(ufuncs)
+
+            pl_mat,cms,c=topo.read_data(
+                "../data/topologies/waxman_30_3_870.txt")
+
+            new_c = [cap for i in range(len(c))]
+            c = new_c
+
+            pl_mat=np.matrix(pl_mat)
+
+            start_time = time.time()
+            #cm_alloc, paths_alloc, useful_when_error = UMMP.max_min_program(
+            #    pl_mat, cms, c, scaled_ufuncs, len(cms))
+
+            #initial_splits=UIEWF.exp_congestion_decay_splits(cms,pl_mat)
+            #cm_alloc,diffs=UIEWF.Util_IEWF(
+            #    pl_mat,cms,c,initial_splits,scaled_ufuncs,it=100,th=0.03)
+
+            cm_alloc,diffs=Hybrid.hybrid_alloc(
+                pl_mat,cms,c,scaled_ufuncs,it=100,th=0.03,k=0.5*len(cms))
+            tot_time = time.time()-start_time
+
+            time_sum+=tot_time
+
+        avg_time=time_sum/10
+
+        times.append(avg_time)
+
+    print(times)
+
+def dummy():
     # running_time()
     pl_mat, cms, c = topo.read_data(
         '../data/topologies/waxman_30_2_870.txt')
@@ -115,3 +330,11 @@ if __name__ == '__main__':
 
     #print(diffs)
     #print(sorted(cms_alloc))
+
+
+if __name__ == '__main__':
+    #UIEWF_time()
+    #Hybrid_time()
+    #UMMP_time()
+    #abilene_time()
+    congestion_time()

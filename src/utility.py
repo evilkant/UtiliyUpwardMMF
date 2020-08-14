@@ -91,8 +91,8 @@ def generate_ufunc():
         util.append((x[i],y[i]))
     return util
 
-def write_ufuncs(cms_num):
-    fp="../data/ufuncs/uf_"+str(cms_num)+".txt"
+def write_ufuncs(cms_num,version=""):
+    fp="../data/ufuncs/uf_"+str(cms_num)+version+".txt"
     with open(fp,'w',encoding='utf-8') as f:
         while cms_num>0:
             util=generate_ufunc()
@@ -216,5 +216,6 @@ def draw_ufunc():
     plt.show()
 
 if __name__ == "__main__":
-    write_ufuncs(30*29)
+    for i in range(1,11):
+        write_ufuncs(110,"_v"+str(i))
     #draw_ufunc()
